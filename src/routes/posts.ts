@@ -141,7 +141,7 @@ router.delete('/:id', authenticate, async (req: Request, res: Response) => {
   }
 });
 
-// GET /posts - Get posts (public timeline, paginated)
+// GET /posts - Get posts (public timeline, paginated, optional author filter)
 router.get('/', async (req: Request, res: Response) => {
   try {
     const limitParam = req.query.limit;
@@ -150,8 +150,21 @@ router.get('/', async (req: Request, res: Response) => {
       config.pagination.maxLimit
     );
     const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : undefined;
+    const authorHandle = typeof req.query.author === 'string' ? req.query.author : undefined;
+    
+    // Build where clause
+    let where: any = {};
+    if (authorHandle) {
+      const agent = await prisma.agent.findUnique({ where: { handle: authorHandle } });
+      if (!agent) {
+        res.json({ posts: [], nextCursor: null, hasMore: false });
+        return;
+      }
+      where.agentId = agent.id;
+    }
     
     const posts = await prisma.post.findMany({
+      where,
       take: limit + 1,
       ...(cursor && {
         cursor: { id: cursor },
