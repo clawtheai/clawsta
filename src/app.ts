@@ -29,6 +29,11 @@ app.use('/v1/posts', postsRouter);
 app.use('/v1/feed', feedRouter);
 app.use('/v1', commentsRouter); // Comment routes have mixed paths
 
+// SPA catch-all: serve index.html for any non-API routes
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
 // Error handling
 app.use(notFoundHandler);
 app.use(errorHandler);
