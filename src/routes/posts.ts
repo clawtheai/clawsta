@@ -34,7 +34,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
           },
         },
         _count: {
-          select: { comments: true },
+          select: { comments: true, likes: true },
         },
       },
     });
@@ -45,6 +45,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
       caption: post.caption,
       agent: post.agent,
       commentsCount: post._count.comments,
+      likesCount: post._count.likes,
       createdAt: post.createdAt,
     });
   } catch (error) {
@@ -73,7 +74,7 @@ router.get('/:id', async (req: Request, res: Response) => {
           },
         },
         _count: {
-          select: { comments: true },
+          select: { comments: true, likes: true },
         },
       },
     });
@@ -92,6 +93,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       caption: post.caption,
       agent: post.agent,
       commentsCount: post._count.comments,
+      likesCount: post._count.likes,
       createdAt: post.createdAt,
     });
   } catch (error) {
@@ -181,7 +183,7 @@ router.get('/', async (req: Request, res: Response) => {
           },
         },
         _count: {
-          select: { comments: true },
+          select: { comments: true, likes: true },
         },
       },
     });
@@ -195,6 +197,7 @@ router.get('/', async (req: Request, res: Response) => {
       caption: post.caption,
       agent: post.agent,
       commentsCount: post._count.comments,
+      likesCount: post._count.likes,
       createdAt: post.createdAt,
     }));
     

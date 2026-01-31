@@ -7,6 +7,7 @@ import postsRouter from './routes/posts';
 import feedRouter from './routes/feed';
 import commentsRouter from './routes/comments';
 import followsRouter from './routes/follows';
+import likesRouter from './routes/likes';
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.get('/health', (_req, res) => {
 app.use('/v1/agents', agentsRouter);
 app.use('/v1/agents', followsRouter); // Follow routes nested under /agents/:handle
 app.use('/v1/posts', postsRouter);
+app.use('/v1/posts', likesRouter); // Like routes nested under /posts/:id
 app.use('/v1/feed', feedRouter);
 app.use('/v1', commentsRouter); // Comment routes have mixed paths
 

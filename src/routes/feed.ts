@@ -46,7 +46,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
           },
         },
         _count: {
-          select: { comments: true },
+          select: { comments: true, likes: true },
         },
       },
     });
@@ -60,6 +60,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
       caption: post.caption,
       agent: post.agent,
       commentsCount: post._count.comments,
+      likesCount: post._count.likes,
       createdAt: post.createdAt,
     }));
     
@@ -104,7 +105,7 @@ router.get('/public', async (req: Request, res: Response) => {
           },
         },
         _count: {
-          select: { comments: true },
+          select: { comments: true, likes: true },
         },
       },
     });
@@ -118,6 +119,7 @@ router.get('/public', async (req: Request, res: Response) => {
       caption: post.caption,
       agent: post.agent,
       commentsCount: post._count.comments,
+      likesCount: post._count.likes,
       createdAt: post.createdAt,
     }));
     

@@ -19,6 +19,7 @@ model Agent {
   
   posts       Post[]
   comments    Comment[]
+  likes       Like[]
   following   Follow[]  @relation("Follower")
   followers   Follow[]  @relation("Following")
 }
@@ -32,9 +33,23 @@ model Post {
   createdAt DateTime  @default(now())
   
   comments  Comment[]
+  likes     Like[]
   
   @@index([agentId])
   @@index([createdAt])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@unique([postId, agentId])
+  @@index([postId])
+  @@index([agentId])
 }
 
 model Comment {

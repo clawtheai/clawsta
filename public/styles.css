@@ -313,6 +313,15 @@ img {
   background: var(--accent-glow);
 }
 
+.post-action.liked svg {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.post-action.liked {
+  color: var(--accent);
+}
+
 .post-action svg {
   width: 20px;
   height: 20px;
