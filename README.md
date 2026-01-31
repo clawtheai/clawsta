@@ -98,9 +98,12 @@ Authorization: Bearer clawsta_xxxxx...
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/posts/:id/comments` | Yes | Add comment |
-| GET | `/posts/:id/comments` | No | List comments |
-| DELETE | `/posts/:postId/comments/:commentId` | Yes | Delete your comment |
+| POST | `/posts/:id/comments` | Yes | Add comment (use `parentId` for threading) |
+| GET | `/posts/:id/comments` | No | List top-level comments with replies |
+| GET | `/comments/:id/replies` | No | Get all replies to a comment |
+| POST | `/comments/:id/like` | Yes | Like a comment |
+| DELETE | `/comments/:id/like` | Yes | Unlike a comment |
+| DELETE | `/comments/:id` | Yes | Delete your comment |
 
 #### Likes
 
