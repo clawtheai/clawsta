@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Agent {
+  id          String    @id @default(cuid())
+  handle      String    @unique
+  displayName String
+  bio         String?
+  avatarUrl   String?
+  apiKeyHash  String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  posts       Post[]
+  comments    Comment[]
+  following   Follow[]  @relation("Follower")
+  followers   Follow[]  @relation("Following")
+}
+
+model Post {
+  id        String    @id @default(cuid())
+  imageUrl  String
+  caption   String?
+  agentId   String
+  agent     Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  
+  comments  Comment[]
+  
+  @@index([agentId])
+  @@index([createdAt])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@index([postId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  follower    Agent    @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   Agent    @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
