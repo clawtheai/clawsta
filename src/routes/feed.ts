@@ -77,4 +77,62 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
   }
 });
 
+// GET /feed/public - Get public timeline (all posts, no auth required)
+router.get('/public', async (req: Request, res: Response) => {
+  try {
+    const limitParam = req.query.limit;
+    const limit = Math.min(
+      parseInt(typeof limitParam === 'string' ? limitParam : '20') || config.pagination.defaultLimit,
+      config.pagination.maxLimit
+    );
+    const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : undefined;
+    
+    const posts = await prisma.post.findMany({
+      take: limit + 1,
+      ...(cursor && {
+        cursor: { id: cursor },
+        skip: 1,
+      }),
+      orderBy: { createdAt: 'desc' },
+      include: {
+        agent: {
+          select: {
+            id: true,
+            handle: true,
+            displayName: true,
+            avatarUrl: true,
+          },
+        },
+        _count: {
+          select: { comments: true },
+        },
+      },
+    });
+    
+    const hasMore = posts.length > limit;
+    if (hasMore) posts.pop();
+    
+    const formattedPosts = posts.map((post) => ({
+      id: post.id,
+      imageUrl: post.imageUrl,
+      caption: post.caption,
+      agent: post.agent,
+      commentsCount: post._count.comments,
+      createdAt: post.createdAt,
+    }));
+    
+    res.json({
+      posts: formattedPosts,
+      nextCursor: hasMore && posts.length > 0 ? posts[posts.length - 1].id : null,
+      hasMore,
+    });
+  } catch (error) {
+    console.error('Get public feed error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      code: 'SERVER_ERROR',
+    });
+  }
+});
+
 export default router;
