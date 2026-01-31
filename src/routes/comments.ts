@@ -5,11 +5,11 @@ import { config } from '../config';
 
 const router = Router();
 
-// POST /posts/:postId/comments - Add comment
+// POST /posts/:postId/comments - Add comment (supports threading with parentId)
 router.post('/posts/:postId/comments', authenticate, async (req: Request, res: Response) => {
   try {
     const postId = req.params.postId as string;
-    const { content } = req.body;
+    const { content, parentId } = req.body;
     
     if (!content || content.trim().length === 0) {
       res.status(422).json({
@@ -33,11 +33,28 @@ router.post('/posts/:postId/comments', authenticate, async (req: Request, res: R
       return;
     }
     
+    // If parentId provided, verify it exists and belongs to same post
+    if (parentId) {
+      const parentComment = await prisma.comment.findUnique({
+        where: { id: parentId },
+        select: { id: true, postId: true },
+      });
+      
+      if (!parentComment || parentComment.postId !== postId) {
+        res.status(404).json({
+          error: 'Parent comment not found',
+          code: 'NOT_FOUND',
+        });
+        return;
+      }
+    }
+    
     const comment = await prisma.comment.create({
       data: {
         content: content.trim(),
         postId,
         agentId: req.agent!.id,
+        parentId: parentId || null,
       },
       include: {
         agent: {
@@ -48,6 +65,9 @@ router.post('/posts/:postId/comments', authenticate, async (req: Request, res: R
             avatarUrl: true,
           },
         },
+        _count: {
+          select: { likes: true, replies: true },
+        },
       },
     });
     
@@ -55,6 +75,9 @@ router.post('/posts/:postId/comments', authenticate, async (req: Request, res: R
       id: comment.id,
       content: comment.content,
       agent: comment.agent,
+      parentId: comment.parentId,
+      likesCount: comment._count.likes,
+      repliesCount: comment._count.replies,
       createdAt: comment.createdAt,
     });
   } catch (error) {
@@ -66,7 +89,7 @@ router.post('/posts/:postId/comments', authenticate, async (req: Request, res: R
   }
 });
 
-// GET /posts/:postId/comments - List comments
+// GET /posts/:postId/comments - List top-level comments with replies
 router.get('/posts/:postId/comments', async (req: Request, res: Response) => {
   try {
     const postId = req.params.postId as string;
@@ -91,14 +114,15 @@ router.get('/posts/:postId/comments', async (req: Request, res: Response) => {
       return;
     }
     
+    // Get top-level comments only (parentId is null)
     const comments = await prisma.comment.findMany({
-      where: { postId },
+      where: { postId, parentId: null },
       take: limit + 1,
       ...(cursor && {
         cursor: { id: cursor },
         skip: 1,
       }),
-      orderBy: { createdAt: 'asc' }, // Oldest first for comments
+      orderBy: { createdAt: 'asc' },
       include: {
         agent: {
           select: {
@@ -106,6 +130,26 @@ router.get('/posts/:postId/comments', async (req: Request, res: Response) => {
             handle: true,
             displayName: true,
             avatarUrl: true,
+          },
+        },
+        _count: {
+          select: { likes: true, replies: true },
+        },
+        replies: {
+          take: 3, // Show first 3 replies
+          orderBy: { createdAt: 'asc' },
+          include: {
+            agent: {
+              select: {
+                id: true,
+                handle: true,
+                displayName: true,
+                avatarUrl: true,
+              },
+            },
+            _count: {
+              select: { likes: true },
+            },
           },
         },
       },
@@ -118,6 +162,15 @@ router.get('/posts/:postId/comments', async (req: Request, res: Response) => {
       id: comment.id,
       content: comment.content,
       agent: comment.agent,
+      likesCount: comment._count.likes,
+      repliesCount: comment._count.replies,
+      replies: comment.replies.map((reply) => ({
+        id: reply.id,
+        content: reply.content,
+        agent: reply.agent,
+        likesCount: reply._count.likes,
+        createdAt: reply.createdAt,
+      })),
       createdAt: comment.createdAt,
     }));
     
@@ -128,6 +181,142 @@ router.get('/posts/:postId/comments', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Get comments error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      code: 'SERVER_ERROR',
+    });
+  }
+});
+
+// GET /comments/:id/replies - Get all replies to a comment
+router.get('/comments/:id/replies', async (req: Request, res: Response) => {
+  try {
+    const commentId = req.params.id as string;
+    
+    const replies = await prisma.comment.findMany({
+      where: { parentId: commentId },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        agent: {
+          select: {
+            id: true,
+            handle: true,
+            displayName: true,
+            avatarUrl: true,
+          },
+        },
+        _count: {
+          select: { likes: true },
+        },
+      },
+    });
+    
+    res.json({
+      replies: replies.map((reply) => ({
+        id: reply.id,
+        content: reply.content,
+        agent: reply.agent,
+        likesCount: reply._count.likes,
+        createdAt: reply.createdAt,
+      })),
+    });
+  } catch (error) {
+    console.error('Get replies error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      code: 'SERVER_ERROR',
+    });
+  }
+});
+
+// POST /comments/:id/like - Like a comment
+router.post('/comments/:id/like', authenticate, async (req: Request, res: Response) => {
+  try {
+    const commentId = req.params.id as string;
+    
+    const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+    if (!comment) {
+      res.status(404).json({
+        error: 'Comment not found',
+        code: 'NOT_FOUND',
+      });
+      return;
+    }
+    
+    // Check if already liked
+    const existing = await prisma.commentLike.findUnique({
+      where: {
+        commentId_agentId: {
+          commentId,
+          agentId: req.agent!.id,
+        },
+      },
+    });
+    
+    if (existing) {
+      res.status(409).json({
+        error: 'Already liked this comment',
+        code: 'ALREADY_LIKED',
+      });
+      return;
+    }
+    
+    await prisma.commentLike.create({
+      data: {
+        commentId,
+        agentId: req.agent!.id,
+      },
+    });
+    
+    const likesCount = await prisma.commentLike.count({ where: { commentId } });
+    
+    res.status(201).json({
+      commentId,
+      likesCount,
+      liked: true,
+    });
+  } catch (error) {
+    console.error('Like comment error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      code: 'SERVER_ERROR',
+    });
+  }
+});
+
+// DELETE /comments/:id/like - Unlike a comment
+router.delete('/comments/:id/like', authenticate, async (req: Request, res: Response) => {
+  try {
+    const commentId = req.params.id as string;
+    
+    const like = await prisma.commentLike.findUnique({
+      where: {
+        commentId_agentId: {
+          commentId,
+          agentId: req.agent!.id,
+        },
+      },
+    });
+    
+    if (!like) {
+      res.status(404).json({
+        error: 'Like not found',
+        code: 'NOT_FOUND',
+      });
+      return;
+    }
+    
+    await prisma.commentLike.delete({ where: { id: like.id } });
+    
+    const likesCount = await prisma.commentLike.count({ where: { commentId } });
+    
+    res.json({
+      commentId,
+      likesCount,
+      unliked: true,
+    });
+  } catch (error) {
+    console.error('Unlike comment error:', error);
     res.status(500).json({
       error: 'Internal server error',
       code: 'SERVER_ERROR',

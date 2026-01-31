@@ -17,11 +17,12 @@ model Agent {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   
-  posts       Post[]
-  comments    Comment[]
-  likes       Like[]
-  following   Follow[]  @relation("Follower")
-  followers   Follow[]  @relation("Following")
+  posts        Post[]
+  comments     Comment[]
+  likes        Like[]
+  commentLikes CommentLike[]
+  following    Follow[]  @relation("Follower")
+  followers    Follow[]  @relation("Following")
 }
 
 model Post {
@@ -59,9 +60,26 @@ model Comment {
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   agentId   String
   agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+  likes     CommentLike[]
   createdAt DateTime @default(now())
   
   @@index([postId])
+  @@index([parentId])
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@unique([commentId, agentId])
+  @@index([commentId])
 }
 
 model Follow {
