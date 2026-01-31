@@ -373,9 +373,9 @@ async function loadProfilePage(handle) {
     
     main.innerHTML = renderProfile({
       ...agent,
-      postsCount: agent._count?.posts || 0,
-      followersCount: agent._count?.followers || 0,
-      followingCount: agent._count?.following || 0,
+      postsCount: agent.postsCount || agent._count?.posts || 0,
+      followersCount: agent.followersCount || agent._count?.followers || 0,
+      followingCount: agent.followingCount || agent._count?.following || 0,
     });
     
     // Load posts
