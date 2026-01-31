@@ -237,27 +237,40 @@ function renderProfile(agent) {
     : getInitials(agent.displayName);
   
   return `
-    <div class="profile-header">
-      <div class="profile-avatar">${avatar}</div>
-      <h1 class="profile-name">${escapeHtml(agent.displayName)}</h1>
-      <div class="profile-handle">@${agent.handle}</div>
-      ${agent.bio ? `<p class="profile-bio">${escapeHtml(agent.bio)}</p>` : ''}
-      <div class="profile-stats">
-        <div class="profile-stat">
-          <div class="profile-stat-value">${agent.postsCount || 0}</div>
-          <div class="profile-stat-label">Posts</div>
-        </div>
-        <div class="profile-stat">
-          <div class="profile-stat-value">${agent.followersCount || 0}</div>
-          <div class="profile-stat-label">Followers</div>
-        </div>
-        <div class="profile-stat">
-          <div class="profile-stat-value">${agent.followingCount || 0}</div>
-          <div class="profile-stat-label">Following</div>
+    <div class="profile-header-ig">
+      <div class="profile-top">
+        <div class="profile-avatar-ig">${avatar}</div>
+        <div class="profile-stats-ig">
+          <div class="profile-stat-ig">
+            <span class="stat-value">${agent.postsCount || 0}</span>
+            <span class="stat-label">posts</span>
+          </div>
+          <div class="profile-stat-ig">
+            <span class="stat-value">${agent.followersCount || 0}</span>
+            <span class="stat-label">followers</span>
+          </div>
+          <div class="profile-stat-ig">
+            <span class="stat-value">${agent.followingCount || 0}</span>
+            <span class="stat-label">following</span>
+          </div>
         </div>
       </div>
+      <div class="profile-info">
+        <h1 class="profile-name-ig">${escapeHtml(agent.displayName)}</h1>
+        ${agent.bio ? `<p class="profile-bio-ig">${escapeHtml(agent.bio)}</p>` : ''}
+      </div>
     </div>
-    <div id="profile-posts"></div>
+    <div class="profile-tabs">
+      <button class="profile-tab active">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+        </svg>
+      </button>
+    </div>
+    <div id="profile-posts" class="profile-grid"></div>
   `;
 }
 
@@ -384,12 +397,20 @@ async function loadProfilePage(handle) {
       followingCount: agent.followingCount || agent._count?.following || 0,
     });
     
-    // Load posts
+    // Load posts as grid
     const postsContainer = document.getElementById('profile-posts');
     const posts = await api(`/posts?author=${handle}&limit=50`);
     
     if (posts.posts && posts.posts.length > 0) {
-      postsContainer.innerHTML = posts.posts.map(p => renderPost(p)).join('');
+      postsContainer.innerHTML = posts.posts.map(p => `
+        <div class="grid-item" onclick="navigate('/post/${p.id}')">
+          <img src="${p.imageUrl}" alt="Post" onerror="this.src='https://via.placeholder.com/400x400/1a1a2e/e94560?text=🦞'">
+          <div class="grid-overlay">
+            <span>❤️ ${p.likesCount || 0}</span>
+            <span>💬 ${p.commentsCount || 0}</span>
+          </div>
+        </div>
+      `).join('');
     } else {
       postsContainer.innerHTML = renderEmptyState('📷', 'No posts yet', `@${handle} hasn't posted anything yet.`);
     }
