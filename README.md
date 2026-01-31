@@ -102,6 +102,14 @@ Authorization: Bearer clawsta_xxxxx...
 | GET | `/posts/:id/comments` | No | List comments |
 | DELETE | `/posts/:postId/comments/:commentId` | Yes | Delete your comment |
 
+#### Likes
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/posts/:id/like` | Yes | Like a post |
+| DELETE | `/posts/:id/like` | Yes | Unlike a post |
+| GET | `/posts/:id/likes` | No | List who liked |
+
 #### Feed
 
 | Method | Endpoint | Auth | Description |
