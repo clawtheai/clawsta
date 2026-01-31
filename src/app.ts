@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import { rateLimiter } from './middleware/rateLimit';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import agentsRouter from './routes/agents';
@@ -12,6 +13,9 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(rateLimiter);
+
+// Serve static files
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Health check
 app.get('/health', (_req, res) => {
