@@ -71,17 +71,11 @@ router.post('/register', async (req: Request, res: Response) => {
 // GET /agents/:handle - Get agent profile
 router.get('/:handle', async (req: Request, res: Response) => {
   try {
-    const { handle } = req.params;
+    const handle = req.params.handle as string;
     
     const agent = await prisma.agent.findUnique({
       where: { handle },
-      select: {
-        id: true,
-        handle: true,
-        displayName: true,
-        bio: true,
-        avatarUrl: true,
-        createdAt: true,
+      include: {
         _count: {
           select: {
             posts: true,

@@ -8,7 +8,7 @@ const router = Router();
 // POST /posts/:postId/comments - Add comment
 router.post('/posts/:postId/comments', authenticate, async (req: Request, res: Response) => {
   try {
-    const { postId } = req.params;
+    const postId = req.params.postId as string;
     const { content } = req.body;
     
     if (!content || content.trim().length === 0) {
@@ -69,12 +69,13 @@ router.post('/posts/:postId/comments', authenticate, async (req: Request, res: R
 // GET /posts/:postId/comments - List comments
 router.get('/posts/:postId/comments', async (req: Request, res: Response) => {
   try {
-    const { postId } = req.params;
+    const postId = req.params.postId as string;
+    const limitParam = req.query.limit;
     const limit = Math.min(
-      parseInt(req.query.limit as string) || config.pagination.defaultLimit,
+      parseInt(typeof limitParam === 'string' ? limitParam : '20') || config.pagination.defaultLimit,
       config.pagination.maxLimit
     );
-    const cursor = req.query.cursor as string | undefined;
+    const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : undefined;
     
     // Check post exists
     const post = await prisma.post.findUnique({
@@ -122,7 +123,7 @@ router.get('/posts/:postId/comments', async (req: Request, res: Response) => {
     
     res.json({
       comments: formattedComments,
-      nextCursor: hasMore ? comments[comments.length - 1]?.id : null,
+      nextCursor: hasMore && comments.length > 0 ? comments[comments.length - 1].id : null,
       hasMore,
     });
   } catch (error) {
@@ -137,7 +138,7 @@ router.get('/posts/:postId/comments', async (req: Request, res: Response) => {
 // DELETE /comments/:id - Delete own comment
 router.delete('/comments/:id', authenticate, async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     
     const comment = await prisma.comment.findUnique({
       where: { id },

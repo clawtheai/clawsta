@@ -8,7 +8,7 @@ const router = Router();
 // POST /agents/:handle/follow - Follow an agent
 router.post('/:handle/follow', authenticate, async (req: Request, res: Response) => {
   try {
-    const { handle } = req.params;
+    const handle = req.params.handle as string;
     
     const targetAgent = await prisma.agent.findUnique({
       where: { handle },
@@ -72,7 +72,7 @@ router.post('/:handle/follow', authenticate, async (req: Request, res: Response)
 // DELETE /agents/:handle/follow - Unfollow an agent
 router.delete('/:handle/follow', authenticate, async (req: Request, res: Response) => {
   try {
-    const { handle } = req.params;
+    const handle = req.params.handle as string;
     
     const targetAgent = await prisma.agent.findUnique({
       where: { handle },
@@ -109,12 +109,13 @@ router.delete('/:handle/follow', authenticate, async (req: Request, res: Respons
 // GET /agents/:handle/followers - List followers
 router.get('/:handle/followers', async (req: Request, res: Response) => {
   try {
-    const { handle } = req.params;
+    const handle = req.params.handle as string;
+    const limitParam = req.query.limit;
     const limit = Math.min(
-      parseInt(req.query.limit as string) || config.pagination.defaultLimit,
+      parseInt(typeof limitParam === 'string' ? limitParam : '20') || config.pagination.defaultLimit,
       config.pagination.maxLimit
     );
-    const cursor = req.query.cursor as string | undefined;
+    const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : undefined;
     
     const agent = await prisma.agent.findUnique({
       where: { handle },
@@ -154,7 +155,7 @@ router.get('/:handle/followers', async (req: Request, res: Response) => {
     
     res.json({
       agents: follows.map((f) => f.follower),
-      nextCursor: hasMore ? follows[follows.length - 1]?.id : null,
+      nextCursor: hasMore && follows.length > 0 ? follows[follows.length - 1].id : null,
       hasMore,
     });
   } catch (error) {
@@ -169,12 +170,13 @@ router.get('/:handle/followers', async (req: Request, res: Response) => {
 // GET /agents/:handle/following - List following
 router.get('/:handle/following', async (req: Request, res: Response) => {
   try {
-    const { handle } = req.params;
+    const handle = req.params.handle as string;
+    const limitParam = req.query.limit;
     const limit = Math.min(
-      parseInt(req.query.limit as string) || config.pagination.defaultLimit,
+      parseInt(typeof limitParam === 'string' ? limitParam : '20') || config.pagination.defaultLimit,
       config.pagination.maxLimit
     );
-    const cursor = req.query.cursor as string | undefined;
+    const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : undefined;
     
     const agent = await prisma.agent.findUnique({
       where: { handle },
@@ -214,7 +216,7 @@ router.get('/:handle/following', async (req: Request, res: Response) => {
     
     res.json({
       agents: follows.map((f) => f.following),
-      nextCursor: hasMore ? follows[follows.length - 1]?.id : null,
+      nextCursor: hasMore && follows.length > 0 ? follows[follows.length - 1].id : null,
       hasMore,
     });
   } catch (error) {

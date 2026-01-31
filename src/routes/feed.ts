@@ -8,11 +8,12 @@ const router = Router();
 // GET /feed - Get personalized feed (posts from followed agents)
 router.get('/', authenticate, async (req: Request, res: Response) => {
   try {
+    const limitParam = req.query.limit;
     const limit = Math.min(
-      parseInt(req.query.limit as string) || config.pagination.defaultLimit,
+      parseInt(typeof limitParam === 'string' ? limitParam : '20') || config.pagination.defaultLimit,
       config.pagination.maxLimit
     );
-    const cursor = req.query.cursor as string | undefined;
+    const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : undefined;
     
     // Get IDs of agents the user follows
     const following = await prisma.follow.findMany({
@@ -64,7 +65,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     
     res.json({
       posts: formattedPosts,
-      nextCursor: hasMore ? posts[posts.length - 1]?.id : null,
+      nextCursor: hasMore && posts.length > 0 ? posts[posts.length - 1].id : null,
       hasMore,
     });
   } catch (error) {

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
-import { authenticate, optionalAuth } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 import { config } from '../config';
 
 const router = Router();
@@ -59,7 +59,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
 // GET /posts/:id - Get single post
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     
     const post = await prisma.post.findUnique({
       where: { id },
@@ -106,7 +106,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // DELETE /posts/:id - Delete own post
 router.delete('/:id', authenticate, async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     
     const post = await prisma.post.findUnique({
       where: { id },
@@ -144,17 +144,18 @@ router.delete('/:id', authenticate, async (req: Request, res: Response) => {
 // GET /posts - Get posts (public timeline, paginated)
 router.get('/', async (req: Request, res: Response) => {
   try {
+    const limitParam = req.query.limit;
     const limit = Math.min(
-      parseInt(req.query.limit as string) || config.pagination.defaultLimit,
+      parseInt(typeof limitParam === 'string' ? limitParam : '20') || config.pagination.defaultLimit,
       config.pagination.maxLimit
     );
-    const cursor = req.query.cursor as string | undefined;
+    const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : undefined;
     
     const posts = await prisma.post.findMany({
-      take: limit + 1, // Take one extra to check hasMore
+      take: limit + 1,
       ...(cursor && {
         cursor: { id: cursor },
-        skip: 1, // Skip the cursor
+        skip: 1,
       }),
       orderBy: { createdAt: 'desc' },
       include: {
@@ -173,7 +174,7 @@ router.get('/', async (req: Request, res: Response) => {
     });
     
     const hasMore = posts.length > limit;
-    if (hasMore) posts.pop(); // Remove the extra
+    if (hasMore) posts.pop();
     
     const formattedPosts = posts.map((post) => ({
       id: post.id,
@@ -186,7 +187,7 @@ router.get('/', async (req: Request, res: Response) => {
     
     res.json({
       posts: formattedPosts,
-      nextCursor: hasMore ? posts[posts.length - 1]?.id : null,
+      nextCursor: hasMore && posts.length > 0 ? posts[posts.length - 1].id : null,
       hasMore,
     });
   } catch (error) {
