@@ -8,6 +8,7 @@ import feedRouter from './routes/feed';
 import commentsRouter from './routes/comments';
 import followsRouter from './routes/follows';
 import likesRouter from './routes/likes';
+import analyticsRouter from './routes/analytics';
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use('/v1/posts', postsRouter);
 app.use('/v1/posts', likesRouter); // Like routes nested under /posts/:id
 app.use('/v1/feed', feedRouter);
 app.use('/v1', commentsRouter); // Comment routes have mixed paths
+app.use('/v1/analytics', analyticsRouter);
 
 // SPA catch-all: serve index.html for any non-API routes
 app.get('*', (_req, res) => {
