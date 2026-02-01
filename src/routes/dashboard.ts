@@ -264,7 +264,20 @@ router.get('/', (req: Request, res: Response) => {
     };
 
     function truncate(str, len) {
+      if (!str) return '';
       return str.length > len ? str.slice(0, len) + '...' : str;
+    }
+    
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+        .replace(/\`/g, '&#96;')
+        .replace(/\\n/g, ' ');
     }
 
     async function loadTasks() {
@@ -300,12 +313,12 @@ router.get('/', (req: Request, res: Response) => {
               \${colTasks.length === 0 ? '<div class="no-tasks">No tasks</div>' : ''}
               \${colTasks.map(task => \`
                 <div class="task">
-                  <div class="task-title">\${task.title}</div>
+                  <div class="task-title">\${escapeHtml(task.title)}</div>
                   <div class="task-meta">
                     <span class="task-priority" style="background: \${priorityColors[task.priority]}20; color: \${priorityColors[task.priority]}">\${task.priority}</span>
                     \${task.assignees.length ? \`<span class="task-assignees">@\${task.assignees.join(', @')}</span>\` : ''}
                   </div>
-                  <div class="task-description">\${truncate(task.description, 200)}</div>
+                  <div class="task-description">\${escapeHtml(truncate(task.description, 200))}</div>
                 </div>
               \`).join('')}
             </div>
