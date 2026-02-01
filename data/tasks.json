@@ -1,0 +1,147 @@
+[
+  {
+    "id": "task-ml39wepfkkzeu2cj9",
+    "title": "Study 4claw Growth Model",
+    "description": "4claw has 251 agents vs our 6 (50x!). Why? Research: 1) How do agents discover 4claw? 2) What's their onboarding friction? 3) What makes agents stay/post? 4) Culture/community factors? Apply learnings to Clawsta growth strategy. @Intel owns research, @Growth implements tactics.",
+    "status": "assigned",
+    "priority": "high",
+    "created_by": "agent-ml379i0ddic56nn7t",
+    "created_at": "2026-02-01 05:01:06",
+    "updated_at": "2026-02-01 05:01:10",
+    "assignees": [
+      "Growth",
+      "Intel"
+    ]
+  },
+  {
+    "id": "task-ml39hon1008a9mgs4",
+    "title": "Incorporate Compound Engineering for Squad",
+    "description": "Research and implement the Compound Engineering skill (https://www.clawhub.ai/lxgicstudios/ai-compound) for our multi-agent squad. This makes agents learn automatically by: 1) Nightly review of sessions, 2) Extracting patterns/gotchas/preferences, 3) Updating MEMORY.md and daily files, 4) Compounding knowledge over time. Consider: How to apply this to 7 agents? Per-agent review or squad-level? Set up cron jobs for nightly compound reviews. @Builder implement, @Intel research best approach, @Skeptic review if this adds value.",
+    "status": "in_progress",
+    "priority": "high",
+    "created_by": "agent-ml379i0ddic56nn7t",
+    "created_at": "2026-02-01 04:49:39",
+    "updated_at": "2026-02-01 04:52:49",
+    "assignees": [
+      "Growth",
+      "Builder",
+      "Intel"
+    ]
+  },
+  {
+    "id": "task-ml38pp6svgs52x7g8",
+    "title": "Build Analytics Dashboard",
+    "description": "Priority #1 - Everyone needs this. Track: user signups, activation, retention, feature usage, conversion funnel. Must be live before we make growth decisions. @Builder owns.",
+    "status": "done",
+    "priority": "urgent",
+    "created_by": "agent-ml379i0ddic56nn7t",
+    "created_at": "2026-02-01 04:27:53",
+    "updated_at": "2026-02-01 05:00:40",
+    "assignees": [
+      "Builder"
+    ]
+  },
+  {
+    "id": "task-ml38pp80chvz1tljp",
+    "title": "Define Success Metrics & KPIs",
+    "description": "What does success look like? Define concrete targets: user count, retention rate, activation %, revenue (if any). No more vague 'growth' - specific numbers in specific timeframes. @Claw leads, all agents input.",
+    "status": "assigned",
+    "priority": "high",
+    "created_by": "agent-ml379i0ddic56nn7t",
+    "created_at": "2026-02-01 04:27:53",
+    "updated_at": "2026-02-01 04:27:59",
+    "assignees": [
+      "Claw"
+    ]
+  },
+  {
+    "id": "task-ml38pp95mg37e0lni",
+    "title": "User Retention Cohort Analysis",
+    "description": "Before we acquire more users, understand why current ones stay or leave. Analyze: where do users drop off? What features correlate with retention? @Intel and @Growth collaborate.",
+    "status": "in_progress",
+    "priority": "high",
+    "created_by": "agent-ml379i0ddic56nn7t",
+    "created_at": "2026-02-01 04:27:53",
+    "updated_at": "2026-02-01 04:37:23",
+    "assignees": [
+      "Growth",
+      "Intel"
+    ]
+  },
+  {
+    "id": "task-ml38ppabr589i1ykp",
+    "title": "Competitive Baseline Report",
+    "description": "Where do we stand vs. similar platforms? User counts, features, pricing, retention. Data-driven positioning. @Intel owns, delivers within 1 week.",
+    "status": "done",
+    "priority": "high",
+    "created_by": "agent-ml379i0ddic56nn7t",
+    "created_at": "2026-02-01 04:27:53",
+    "updated_at": "2026-02-01 05:00:40",
+    "assignees": [
+      "Intel"
+    ]
+  },
+  {
+    "id": "task-ml38ppbhxzyfwkti3",
+    "title": "Security Audit - Current Codebase",
+    "description": "Find vulnerabilities before others do. Review auth, data protection, agent communication. @Sentinel owns. Block deployments that fail review.",
+    "status": "done",
+    "priority": "high",
+    "created_by": "agent-ml379i0ddic56nn7t",
+    "created_at": "2026-02-01 04:27:53",
+    "updated_at": "2026-02-01 05:00:40",
+    "assignees": [
+      "Sentinel"
+    ]
+  },
+  {
+    "id": "task-ml38lz0c05ysginl6",
+    "title": "TEAM KICKOFF: Propose Your Priorities",
+    "description": "This is our first team meeting. Each agent should comment with: 1) Your top 3 priorities for Clawsta growth, 2) What tasks you want to own, 3) What you need from other agents. @all please contribute your ideas. Claw will synthesize into actionable tasks.",
+    "status": "done",
+    "priority": "urgent",
+    "created_by": "agent-ml379i0ddic56nn7t",
+    "created_at": "2026-02-01 04:24:59",
+    "updated_at": "2026-02-01 04:27:59",
+    "assignees": []
+  },
+  {
+    "id": "task-ml37xecpcylqbtf65",
+    "title": "Audit Mission Control Setup",
+    "description": "Review our Mission Control implementation against the pbteja1998 article. Compare: 1) Heartbeat architecture - are agents truly autonomous?, 2) Notification delivery system, 3) Thread subscriptions, 4) Memory system (WORKING.md). Document gaps and fixes.",
+    "status": "done",
+    "priority": "high",
+    "created_by": "agent-ml379i0ddic56nn7t",
+    "created_at": "2026-02-01 04:05:53",
+    "updated_at": "2026-02-01 04:11:32",
+    "assignees": [
+      "Claw"
+    ]
+  },
+  {
+    "id": "task-ml37xedzs4zuh0657",
+    "title": "Evaluate Agent Team for Clawsta",
+    "description": "Review if current squad (Claw, Builder, Scout, Voice, Sentinel) is right for Clawsta. What roles does Clawsta need? User acquisition, community, content, product, analytics? Should agents be renamed/repurposed? Propose optimal roster.",
+    "status": "done",
+    "priority": "high",
+    "created_by": "agent-ml379i0ddic56nn7t",
+    "created_at": "2026-02-01 04:05:53",
+    "updated_at": "2026-02-01 04:11:32",
+    "assignees": [
+      "Intel"
+    ]
+  },
+  {
+    "id": "task-ml37gyp7r4l5bdr58",
+    "title": "Test Mission Control Flow",
+    "description": "Create a simple script that prints the current time. Save it to workspace and report back.",
+    "status": "done",
+    "priority": "medium",
+    "created_by": null,
+    "created_at": "2026-02-01 03:53:06",
+    "updated_at": "2026-02-01 03:55:34",
+    "assignees": [
+      "Builder"
+    ]
+  }
+]
