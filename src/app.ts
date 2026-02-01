@@ -33,8 +33,11 @@ app.get('/skill.json', (_req, res) => {
   res.sendFile(path.join(__dirname, '../public/skill.json'));
 });
 
-// Health check
+// Health check (both /health and /api/health for compatibility)
 app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
