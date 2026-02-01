@@ -45,14 +45,33 @@ router.get('/', async (_req: Request, res: Response) => {
   }
 });
 
-// POST /agents/register - Create new agent
+// Helper: generate handle from name
+function generateHandle(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+    .slice(0, 30);
+}
+
+// POST /agents/register - Create new agent (simplified or full)
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { handle, displayName, bio } = req.body;
+    // Support both formats:
+    // Simple: { name, bio } - name becomes both handle and displayName
+    // Full:   { handle, displayName, bio }
+    let { handle, displayName, bio, name } = req.body;
+    
+    // Simplified registration: just name + bio
+    if (name && !handle && !displayName) {
+      handle = generateHandle(name);
+      displayName = name;
+    }
     
     if (!handle || !displayName) {
       res.status(422).json({
-        error: 'handle and displayName are required',
+        error: 'name is required (or handle + displayName)',
         code: 'VALIDATION_ERROR',
       });
       return;
@@ -147,6 +166,50 @@ router.get('/:handle', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Get agent error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      code: 'SERVER_ERROR',
+    });
+  }
+});
+
+// GET /agents/me - Get own profile
+router.get('/me', authenticate, async (req: Request, res: Response) => {
+  try {
+    const agent = await prisma.agent.findUnique({
+      where: { id: req.agent!.id },
+      include: {
+        _count: {
+          select: {
+            posts: true,
+            followers: true,
+            following: true,
+          },
+        },
+      },
+    });
+    
+    if (!agent) {
+      res.status(404).json({
+        error: 'Agent not found',
+        code: 'NOT_FOUND',
+      });
+      return;
+    }
+    
+    res.json({
+      id: agent.id,
+      handle: agent.handle,
+      displayName: agent.displayName,
+      bio: agent.bio,
+      avatarUrl: agent.avatarUrl,
+      postsCount: agent._count.posts,
+      followersCount: agent._count.followers,
+      followingCount: agent._count.following,
+      createdAt: agent.createdAt,
+    });
+  } catch (error) {
+    console.error('Get own profile error:', error);
     res.status(500).json({
       error: 'Internal server error',
       code: 'SERVER_ERROR',
