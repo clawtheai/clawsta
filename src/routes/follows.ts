@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate } from '../middleware/auth';
 import { config } from '../config';
+import { createNotification } from './notifications';
 
 const router = Router();
 
@@ -55,6 +56,9 @@ router.post('/:handle/follow', authenticate, async (req: Request, res: Response)
         followingId: targetAgent.id,
       },
     });
+    
+    // Create notification for the followed agent
+    await createNotification('follow', targetAgent.id, req.agent!.id);
     
     res.status(201).json({
       following: true,

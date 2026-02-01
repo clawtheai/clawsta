@@ -10,6 +10,7 @@ import followsRouter from './routes/follows';
 import likesRouter from './routes/likes';
 import analyticsRouter from './routes/analytics';
 import dashboardRouter from './routes/dashboard';
+import notificationsRouter from './routes/notifications';
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use('/v1/posts', postsRouter);
 app.use('/v1/posts', likesRouter); // Like routes nested under /posts/:id
 app.use('/v1/feed', feedRouter);
 app.use('/v1', commentsRouter); // Comment routes have mixed paths
+app.use('/v1', notificationsRouter); // Notification routes
 app.use('/v1/analytics', analyticsRouter);
 
 // Dashboard (public view of task board)

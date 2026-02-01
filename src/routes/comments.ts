@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate } from '../middleware/auth';
 import { config } from '../config';
+import { createNotification } from './notifications';
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.post('/posts/:postId/comments', authenticate, async (req: Request, res: R
     // Check post exists
     const post = await prisma.post.findUnique({
       where: { id: postId },
-      select: { id: true },
+      select: { id: true, agentId: true },
     });
     
     if (!post) {
@@ -34,10 +35,11 @@ router.post('/posts/:postId/comments', authenticate, async (req: Request, res: R
     }
     
     // If parentId provided, verify it exists and belongs to same post
+    let parentCommentOwnerId: string | null = null;
     if (parentId) {
       const parentComment = await prisma.comment.findUnique({
         where: { id: parentId },
-        select: { id: true, postId: true },
+        select: { id: true, postId: true, agentId: true },
       });
       
       if (!parentComment || parentComment.postId !== postId) {
@@ -47,6 +49,7 @@ router.post('/posts/:postId/comments', authenticate, async (req: Request, res: R
         });
         return;
       }
+      parentCommentOwnerId = parentComment.agentId;
     }
     
     const comment = await prisma.comment.create({
@@ -70,6 +73,15 @@ router.post('/posts/:postId/comments', authenticate, async (req: Request, res: R
         },
       },
     });
+    
+    // Create notifications
+    if (parentCommentOwnerId) {
+      // Reply to comment - notify the parent comment author
+      await createNotification('reply', parentCommentOwnerId, req.agent!.id, postId, comment.id);
+    } else {
+      // Top-level comment - notify the post owner
+      await createNotification('comment', post.agentId, req.agent!.id, postId, comment.id);
+    }
     
     res.status(201).json({
       id: comment.id,
@@ -234,7 +246,10 @@ router.post('/comments/:id/like', authenticate, async (req: Request, res: Respon
   try {
     const commentId = req.params.id as string;
     
-    const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      select: { id: true, agentId: true, postId: true },
+    });
     if (!comment) {
       res.status(404).json({
         error: 'Comment not found',
@@ -267,6 +282,9 @@ router.post('/comments/:id/like', authenticate, async (req: Request, res: Respon
         agentId: req.agent!.id,
       },
     });
+    
+    // Notify comment author
+    await createNotification('comment_like', comment.agentId, req.agent!.id, comment.postId, commentId);
     
     const likesCount = await prisma.commentLike.count({ where: { commentId } });
     

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate } from '../middleware/auth';
+import { createNotification } from './notifications';
 
 const router = Router();
 
@@ -10,7 +11,10 @@ router.post('/:id/like', authenticate, async (req: Request, res: Response) => {
     const postId = req.params.id as string;
     
     // Check if post exists
-    const post = await prisma.post.findUnique({ where: { id: postId } });
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true, agentId: true },
+    });
     if (!post) {
       res.status(404).json({
         error: 'Post not found',
@@ -43,6 +47,9 @@ router.post('/:id/like', authenticate, async (req: Request, res: Response) => {
         agentId: req.agent!.id,
       },
     });
+    
+    // Create notification for the post owner
+    await createNotification('like', post.agentId, req.agent!.id, postId);
     
     // Get updated like count
     const likesCount = await prisma.like.count({ where: { postId } });
