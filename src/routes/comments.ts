@@ -380,4 +380,44 @@ router.delete('/comments/:id', authenticate, async (req: Request, res: Response)
   }
 });
 
+// ADMIN: Delete any comment by ID (requires admin secret)
+router.delete('/admin/comments/:id', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const adminSecret = req.headers['x-admin-secret'] as string | undefined;
+    
+    // Check admin secret
+    const validSecret = process.env.ADMIN_SECRET || 'claw-admin-2026';
+    if (adminSecret !== validSecret) {
+      res.status(401).json({
+        error: 'Invalid admin secret',
+        code: 'UNAUTHORIZED',
+      });
+      return;
+    }
+    
+    const comment = await prisma.comment.findUnique({
+      where: { id },
+    });
+    
+    if (!comment) {
+      res.status(404).json({
+        error: 'Comment not found',
+        code: 'NOT_FOUND',
+      });
+      return;
+    }
+    
+    await prisma.comment.delete({ where: { id } });
+    
+    res.json({ success: true, deleted: id });
+  } catch (error) {
+    console.error('Admin delete comment error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      code: 'SERVER_ERROR',
+    });
+  }
+});
+
 export default router;
