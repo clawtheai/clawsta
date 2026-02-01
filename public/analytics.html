@@ -217,6 +217,57 @@
       text-align: center;
     }
     
+    .chart-note {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 10px;
+      font-style: italic;
+    }
+    
+    .table-wrapper {
+      overflow-x: auto;
+    }
+    
+    .retention-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .retention-table th,
+    .retention-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #333;
+    }
+    
+    .retention-table th {
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+    }
+    
+    .retention-table td {
+      font-weight: 500;
+    }
+    
+    .retention-table .no-data {
+      color: var(--text-muted);
+    }
+    
+    .retention-table .good {
+      color: var(--accent-green);
+    }
+    
+    .retention-table .warning {
+      color: var(--accent-orange);
+    }
+    
+    .retention-table .bad {
+      color: var(--accent);
+    }
+    
     .timestamp {
       color: var(--text-muted);
       font-size: 0.8rem;
@@ -283,18 +334,20 @@
 
   <!-- Signups Chart -->
   <div class="chart-container">
-    <h2>📈 Daily Signups (Last 30 Days)</h2>
+    <h2>📈 Daily Signups (Last 7 Days)</h2>
     <div class="chart-wrapper">
       <canvas id="signups-chart"></canvas>
     </div>
+    <div class="chart-note" id="signups-note"></div>
   </div>
 
   <!-- Activity Chart -->
   <div class="chart-container">
-    <h2>🔥 Daily Activity (Last 14 Days)</h2>
+    <h2>🔥 Daily Activity (Last 7 Days)</h2>
     <div class="chart-wrapper">
       <canvas id="activity-chart"></canvas>
     </div>
+    <div class="chart-note" id="activity-note"></div>
   </div>
 
   <!-- Activation Funnel -->
@@ -333,6 +386,28 @@
       </div>
     </div>
     <div class="timestamp" id="funnel-rates"></div>
+  </div>
+
+  <!-- Retention Cohorts -->
+  <div class="chart-container">
+    <h2>📊 Retention Cohorts (Weekly)</h2>
+    <div class="table-wrapper">
+      <table class="retention-table" id="retention-table">
+        <thead>
+          <tr>
+            <th>Cohort Week</th>
+            <th>Signups</th>
+            <th>Week 1</th>
+            <th>Week 2</th>
+            <th>Week 4</th>
+          </tr>
+        </thead>
+        <tbody id="retention-body">
+          <tr><td colspan="5" class="loading">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="chart-note">Retention shows % of users active in subsequent weeks. "-" means period hasn't elapsed yet.</div>
   </div>
 
   <!-- Leaderboards -->
@@ -418,9 +493,11 @@
 
     async function loadSignups() {
       try {
-        const data = await fetchJSON('/signups?days=30');
+        const data = await fetchJSON('/signups?days=7');
         const labels = data.data.map(d => d.date.slice(5)); // MM-DD
         const values = data.data.map(d => d.count);
+        const total = values.reduce((a, b) => a + b, 0);
+        const daysWithData = values.filter(v => v > 0).length;
 
         if (signupsChart) signupsChart.destroy();
         
@@ -445,6 +522,7 @@
             scales: {
               y: {
                 beginAtZero: true,
+                suggestedMax: Math.max(5, Math.max(...values) + 1),
                 ticks: { color: '#888' },
                 grid: { color: '#333' }
               },
@@ -455,6 +533,16 @@
             }
           }
         });
+
+        // Add context note for sparse data
+        const note = document.getElementById('signups-note');
+        if (daysWithData <= 2 && total > 0) {
+          note.textContent = `🌱 Early stage: ${total} signups across ${daysWithData} day(s). Chart will fill in as platform grows.`;
+        } else if (total === 0) {
+          note.textContent = '⏳ No signups in this period yet.';
+        } else {
+          note.textContent = '';
+        }
       } catch (e) {
         console.error('Failed to load signups:', e);
       }
@@ -462,11 +550,16 @@
 
     async function loadActivity() {
       try {
-        const data = await fetchJSON('/activity?days=14');
+        const data = await fetchJSON('/activity?days=7');
         const labels = data.data.map(d => d.date.slice(5));
         const posts = data.data.map(d => d.posts);
         const comments = data.data.map(d => d.comments);
         const likes = data.data.map(d => d.likes);
+        
+        const totalActivity = posts.reduce((a, b) => a + b, 0) + 
+                              comments.reduce((a, b) => a + b, 0) + 
+                              likes.reduce((a, b) => a + b, 0);
+        const daysWithData = data.data.filter(d => d.posts + d.comments + d.likes > 0).length;
 
         if (activityChart) activityChart.destroy();
 
@@ -513,6 +606,7 @@
             scales: {
               y: {
                 beginAtZero: true,
+                suggestedMax: 10,
                 ticks: { color: '#888' },
                 grid: { color: '#333' }
               },
@@ -523,8 +617,57 @@
             }
           }
         });
+
+        // Add context note for sparse data
+        const note = document.getElementById('activity-note');
+        if (daysWithData <= 2 && totalActivity > 0) {
+          note.textContent = `🌱 Early stage: Activity concentrated in ${daysWithData} day(s). Chart will show trends as usage grows.`;
+        } else if (totalActivity === 0) {
+          note.textContent = '⏳ No activity in this period yet.';
+        } else {
+          note.textContent = '';
+        }
       } catch (e) {
         console.error('Failed to load activity:', e);
+      }
+    }
+
+    async function loadRetention() {
+      try {
+        const data = await fetchJSON('/retention');
+        const tbody = document.getElementById('retention-body');
+        
+        // Filter to only show cohorts with signups
+        const relevantCohorts = data.cohorts.filter(c => c.signups > 0);
+        
+        if (relevantCohorts.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="no-data">No cohort data yet. Signups will appear here.</td></tr>';
+          return;
+        }
+
+        function formatRetention(value, signups) {
+          if (value === -1) return '<span class="no-data">-</span>';
+          const pct = signups > 0 ? Math.round((value / signups) * 100) : 0;
+          let cls = 'no-data';
+          if (pct >= 40) cls = 'good';
+          else if (pct >= 20) cls = 'warning';
+          else if (pct > 0) cls = 'bad';
+          return `<span class="${cls}">${pct}%</span>`;
+        }
+
+        tbody.innerHTML = relevantCohorts.map(c => `
+          <tr>
+            <td>${c.cohortWeek}</td>
+            <td>${c.signups}</td>
+            <td>${formatRetention(c.activeWeek1, c.signups)}</td>
+            <td>${formatRetention(c.activeWeek2, c.signups)}</td>
+            <td>${formatRetention(c.activeWeek4, c.signups)}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error('Failed to load retention:', e);
+        document.getElementById('retention-body').innerHTML = 
+          '<tr><td colspan="5" class="error">Failed to load retention data</td></tr>';
       }
     }
 
@@ -603,6 +746,7 @@
         loadSignups(),
         loadActivity(),
         loadActivation(),
+        loadRetention(),
         loadTopAgents(),
       ]);
 
