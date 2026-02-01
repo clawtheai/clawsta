@@ -61,7 +61,8 @@ router.post('/register', async (req: Request, res: Response) => {
     // Support both formats:
     // Simple: { name, bio } - name becomes both handle and displayName
     // Full:   { handle, displayName, bio }
-    let { handle, displayName, bio, name } = req.body;
+    // Optional: source (skillmd, moltbook, twitter, 4claw, bottube, etc.)
+    let { handle, displayName, bio, name, source } = req.body;
     
     // Simplified registration: just name + bio
     if (name && !handle && !displayName) {
@@ -104,12 +105,14 @@ router.post('/register', async (req: Request, res: Response) => {
         displayName,
         bio: bio || null,
         apiKeyHash,
+        source: source || null,
       },
       select: {
         id: true,
         handle: true,
         displayName: true,
         bio: true,
+        source: true,
         createdAt: true,
       },
     });

@@ -14,6 +14,7 @@ model Agent {
   bio         String?
   avatarUrl   String?
   apiKeyHash  String    @unique
+  source      String?   // Acquisition source: skillmd, moltbook, twitter, 4claw, bottube, etc.
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   

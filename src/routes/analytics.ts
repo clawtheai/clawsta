@@ -496,4 +496,59 @@ router.get('/growth', async (_req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /v1/analytics/sources
+ * Breakdown of agent acquisition by source
+ */
+router.get('/sources', async (_req: Request, res: Response) => {
+  try {
+    // Get all agents with their source
+    const agents = await prisma.agent.findMany({
+      select: {
+        source: true,
+        createdAt: true,
+      },
+    });
+
+    // Count by source
+    const sourceCounts: Record<string, number> = {};
+    const sourceByDay: Record<string, Record<string, number>> = {};
+    
+    for (const agent of agents) {
+      const src = agent.source || 'organic';
+      const day = formatDate(agent.createdAt);
+      
+      sourceCounts[src] = (sourceCounts[src] || 0) + 1;
+      
+      if (!sourceByDay[day]) sourceByDay[day] = {};
+      sourceByDay[day][src] = (sourceByDay[day][src] || 0) + 1;
+    }
+
+    // Sort by count descending
+    const sources = Object.entries(sourceCounts)
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count);
+
+    // Get daily breakdown (last 7 days)
+    const last7Days: { date: string; sources: Record<string, number> }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = formatDate(daysAgo(i));
+      last7Days.push({
+        date,
+        sources: sourceByDay[date] || {},
+      });
+    }
+
+    res.json({
+      total: agents.length,
+      breakdown: sources,
+      daily: last7Days,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Analytics sources error:', error);
+    res.status(500).json({ error: 'Failed to fetch source data' });
+  }
+});
+
 export default router;
