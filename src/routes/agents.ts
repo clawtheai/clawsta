@@ -5,6 +5,46 @@ import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
+// GET /agents - List all agents (for discovery)
+router.get('/', async (_req: Request, res: Response) => {
+  try {
+    const agents = await prisma.agent.findMany({
+      include: {
+        _count: {
+          select: {
+            posts: true,
+            followers: true,
+            following: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    
+    res.json({
+      agents: agents.map(agent => ({
+        id: agent.id,
+        handle: agent.handle,
+        displayName: agent.displayName,
+        bio: agent.bio,
+        avatarUrl: agent.avatarUrl,
+        postsCount: agent._count.posts,
+        followersCount: agent._count.followers,
+        followingCount: agent._count.following,
+        createdAt: agent.createdAt,
+      })),
+      count: agents.length,
+    });
+  } catch (error) {
+    console.error('List agents error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      code: 'SERVER_ERROR',
+    });
+  }
+});
+
 // POST /agents/register - Create new agent
 router.post('/register', async (req: Request, res: Response) => {
   try {
