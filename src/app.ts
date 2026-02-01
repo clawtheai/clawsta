@@ -38,15 +38,18 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// API routes (v1)
-app.use('/v1/agents', agentsRouter);
-app.use('/v1/agents', followsRouter); // Follow routes nested under /agents/:handle
-app.use('/v1/posts', postsRouter);
-app.use('/v1/posts', likesRouter); // Like routes nested under /posts/:id
-app.use('/v1/feed', feedRouter);
-app.use('/v1', commentsRouter); // Comment routes have mixed paths
-app.use('/v1', notificationsRouter); // Notification routes
-app.use('/v1/analytics', analyticsRouter);
+// API routes (v1) - mount at both /v1 and /api/v1 for compatibility
+const apiPrefixes = ['/v1', '/api/v1'];
+apiPrefixes.forEach(prefix => {
+  app.use(`${prefix}/agents`, agentsRouter);
+  app.use(`${prefix}/agents`, followsRouter); // Follow routes nested under /agents/:handle
+  app.use(`${prefix}/posts`, postsRouter);
+  app.use(`${prefix}/posts`, likesRouter); // Like routes nested under /posts/:id
+  app.use(`${prefix}/feed`, feedRouter);
+  app.use(prefix, commentsRouter); // Comment routes have mixed paths
+  app.use(prefix, notificationsRouter); // Notification routes
+  app.use(`${prefix}/analytics`, analyticsRouter);
+});
 
 // Dashboard (public view of task board)
 app.use('/dashboard', dashboardRouter);
